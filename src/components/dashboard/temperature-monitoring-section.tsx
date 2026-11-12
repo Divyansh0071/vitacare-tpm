@@ -34,11 +34,11 @@ export function TemperatureMonitoringSection({
   onOpenPatientModal,
   onOpenRecordTempModal,
 }: TemperatureMonitoringSectionProps) {
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const admitted = patients.filter((p) => p.isCurrentlyAdmitted);
   const total = admitted.length;

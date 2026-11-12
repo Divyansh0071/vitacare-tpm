@@ -25,7 +25,15 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  const [patients, setPatients] = React.useState<Patient[]>(MOCK_PATIENTS);
+  const [patients, setPatients] = React.useState<Patient[]>(() => {
+    if (typeof window === "undefined") return MOCK_PATIENTS;
+    try {
+      const saved = localStorage.getItem("vitacare-patients");
+      return saved ? (JSON.parse(saved) as Patient[]) : MOCK_PATIENTS;
+    } catch {
+      return MOCK_PATIENTS;
+    }
+  });
   const [searchTerm, setSearchTerm] = React.useState("");
   const [activeNav, setActiveNav] = React.useState("dashboard");
   const [activeKpiFilter, setActiveKpiFilter] = React.useState("all");
@@ -33,19 +41,28 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [systemAlertMessage, setSystemAlertMessage] = React.useState<string | null>(null);
 
+  // Persist patients to localStorage whenever they change
+  React.useEffect(() => {
+    localStorage.setItem("vitacare-patients", JSON.stringify(patients));
+  }, [patients]);
+
   // Dynamic calculations from current patient state
   const metrics = React.useMemo(() => {
     return calculateDashboardMetrics(patients, FACILITY_CAPACITY);
   }, [patients]);
 
-  const handleOpenPatientModal = (patient: Patient) => {
+  const [modalInitialTab, setModalInitialTab] = React.useState<"overview" | "vitals" | "doctor" | "discharge">("overview");
+
+  const handleOpenPatientModal = (patient: Patient, tab?: "overview" | "vitals" | "doctor" | "discharge") => {
     setSelectedPatient(patient);
+    setModalInitialTab(tab ?? "overview");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedPatient(null);
+    setModalInitialTab("overview");
   };
 
   const handleRecordVitals = (patientId: string, temp: number, spo2: number) => {
@@ -141,6 +158,34 @@ export default function DashboardPage() {
     );
 
     setSystemAlertMessage(`Doctor evaluation round marked as completed for ${patientId}.`);
+    setTimeout(() => setSystemAlertMessage(null), 4000);
+  };
+
+  const handleRecordDoctorConsultation = (
+    patientId: string,
+    doctorName: string,
+    notes: string,
+    recommendation: string
+  ) => {
+    setPatients((prev) =>
+      prev.map((p) => {
+        if (p.id !== patientId) return p;
+        return {
+          ...p,
+          doctorVisitToday: {
+            ...p.doctorVisitToday,
+            status: "completed",
+            doctorName,
+            completedAt: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            notes: `${notes} [Recommendation: ${recommendation}]`,
+          },
+        };
+      })
+    );
+    setSystemAlertMessage(`Doctor consultation recorded for ${patientId}.`);
     setTimeout(() => setSystemAlertMessage(null), 4000);
   };
 
@@ -408,11 +453,14 @@ export default function DashboardPage() {
 
       {/* Interactive Patient Detail Modal */}
       <PatientDetailModal
+        key={selectedPatient?.id ?? "no-patient"}
         patient={selectedPatient}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onRecordVitals={handleRecordVitals}
+        onRecordDoctorConsultation={handleRecordDoctorConsultation}
         onDischarge={handleDischargePatient}
+        initialTab={modalInitialTab}
       />
     </AppShell>
   );

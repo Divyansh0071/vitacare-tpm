@@ -64,12 +64,6 @@ export function PatientDetailModal({
   const [feedbackMsg, setFeedbackMsg] = React.useState<string | null>(null);
   const [dischargeError, setDischargeError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    setActiveTab(initialTab);
-    setFeedbackMsg(null);
-    setDischargeError(null);
-  }, [initialTab, patient?.id]);
-
   if (!isOpen || !patient) return null;
 
   // 3-Day Fever-Free Rule Validation

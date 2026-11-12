@@ -5,7 +5,6 @@ import {
   Stethoscope,
   CheckCircle2,
   Clock,
-  Eye,
   Plus,
 } from "lucide-react";
 import { Patient } from "@/types/quarantine";
@@ -16,14 +15,14 @@ interface DoctorVisitsSectionProps {
   patients: Patient[];
   onFilterVisits?: (status: string) => void;
   onOpenPatientModal?: (patient: Patient, tab?: "overview" | "vitals" | "doctor" | "discharge") => void;
-  onQuickCompleteVisit?: (patientId: string) => void;
+  onCompleteNextVisit: (patientId: string) => void;
 }
 
 export function DoctorVisitsSection({
   patients,
   onFilterVisits,
   onOpenPatientModal,
-  onQuickCompleteVisit,
+  onCompleteNextVisit,
 }: DoctorVisitsSectionProps) {
   const admitted = patients.filter((p) => p.isCurrentlyAdmitted);
   const total = admitted.length;
@@ -189,17 +188,15 @@ export function DoctorVisitsSection({
                 Record Consultation
               </Button>
 
-              {onQuickCompleteVisit && (
-                <Button
+              <Button
                   type="button"
                   variant="default"
                   size="sm"
-                  onClick={() => onQuickCompleteVisit(nextPendingPatient.id)}
+                  onClick={() => onCompleteNextVisit(nextPendingPatient.id)}
                   className="text-xs h-8 bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
                 >
                   Mark Round Completed
                 </Button>
-              )}
             </div>
           </div>
         )}
